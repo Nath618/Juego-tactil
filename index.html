@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Juego con Joystick</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00ffcc">
+
+  <!-- Phaser y NippleJS -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; background: #222; }
+    #gameContainer { width: 100vw; height: 80vh; }
+    #joystick { width: 100vw; height: 20vh; position: fixed; bottom: 0; left: 0; }
+  </style>
+</head>
+<body>
+  <div id="gameContainer"></div>
+  <div id="joystick"></div>
+
+  <script>
+    // Registro del service worker para PWA
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("Service Worker registrado"))
+        .catch(err => console.log("Error al registrar SW:", err));
+    }
+
+    let player;
+    let cursors = { left: false, right: false, up: false, down: false };
+
+    const config = {
+      type: Phaser.AUTO,
+      parent: "gameContainer",
+      width: window.innerWidth,
+      height: window.innerHeight * 0.8,
+      backgroundColor: "#1d1d1d",
+      physics: { default: "arcade", arcade: { debug: false } },
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      }
+    };
+
+    const game = new Phaser.Game(config);
+
+    function preload() {}
+
+    function create() {
+      player = this.add.circle(200, 200, 30, 0x00ffcc);
+      this.physics.add.existing(player);
+      player.body.setCollideWorldBounds(true);
+    }
+
+    function update() {
+      const speed = 200;
+      player.body.setVelocity(0);
+
+      if (cursors.left) player.body.setVelocityX(-speed);
+      if (cursors.right) player.body.setVelocityX(speed);
+      if (cursors.up) player.body.setVelocityY(-speed);
+      if (cursors.down) player.body.setVelocityY(speed);
+    }
+
+    // Joystick virtual
+    const joystick = nipplejs.create({
+      zone: document.getElementById('joystick'),
+      mode: 'static',
+      position: { left: '50%', top: '50%' },
+      color: 'cyan'
+    });
+
+    joystick.on('dir', (evt, data) => {
+      cursors.left = data.direction.angle === 'left';
+      cursors.right = data.direction.angle === 'right';
+      cursors.up = data.direction.angle === 'up';
+      cursors.down = data.direction.angle === 'down';
+    });
+
+    joystick.on('end', () => {
+      cursors.left = cursors.right = cursors.up = cursors.down = false;
+    });
+  </script>
+</body>
+</html>
